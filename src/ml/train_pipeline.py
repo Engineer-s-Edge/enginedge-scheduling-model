@@ -1,10 +1,12 @@
 import asyncio
 import logging
-from datetime import datetime
-from typing import List, Dict
+from typing import Dict, List
+
 import torch
-from .maml_scheduler import SchedulingMAML
+
 from ..nlp.deliverable_mapper import DeliverableMapper
+from .maml_scheduler import SchedulingMAML
+
 
 class TrainingPipeline:
     """
@@ -29,9 +31,7 @@ class TrainingPipeline:
                     {"deliverable": "Plan Q3 roadmap", "context": {}},
                     {"deliverable": "Review new designs", "context": {}},
                 ],
-                "query_events": [
-                    {"deliverable": "Finalize budget", "context": {}}
-                ]
+                "query_events": [{"deliverable": "Finalize budget", "context": {}}],
             }
         ]
         logging.info("Training data loaded.")
@@ -43,7 +43,7 @@ class TrainingPipeline:
         """
         logging.info("Starting meta-training pipeline...")
 
-        best_loss = float('inf')
+        best_loss = float("inf")
         training_history = []
 
         for epoch in range(epochs):
@@ -56,19 +56,25 @@ class TrainingPipeline:
 
             # Process deliverables through NLP
             for task in task_batch:
-                task['embeddings'] = await self._process_deliverables(task['support_events'])
-                task['query_embeddings'] = await self._process_deliverables(task['query_events'])
+                task["embeddings"] = await self._process_deliverables(
+                    task["support_events"]
+                )
+                task["query_embeddings"] = await self._process_deliverables(
+                    task["query_events"]
+                )
 
             # Meta-learning update
             meta_result = await self.maml_model.meta_update(task_batch)
 
-            if meta_result['status'] == 'success':
-                current_loss = meta_result['meta_loss']
-                training_history.append({
-                    'epoch': epoch,
-                    'meta_loss': current_loss,
-                    'valid_tasks': meta_result['valid_tasks']
-                })
+            if meta_result["status"] == "success":
+                current_loss = meta_result["meta_loss"]
+                training_history.append(
+                    {
+                        "epoch": epoch,
+                        "meta_loss": current_loss,
+                        "valid_tasks": meta_result["valid_tasks"],
+                    }
+                )
 
                 # Save best model
                 if current_loss < best_loss:
@@ -79,9 +85,9 @@ class TrainingPipeline:
                     logging.info(f"Epoch {epoch}: meta_loss = {current_loss:.4f}")
 
         return {
-            'final_loss': best_loss,
-            'training_history': training_history,
-            'status': 'completed'
+            "final_loss": best_loss,
+            "training_history": training_history,
+            "status": "completed",
         }
 
     def _sample_task_batch(self, batch_size: int) -> List[Dict]:
@@ -97,21 +103,27 @@ class TrainingPipeline:
 
     async def _process_deliverables(self, events: List[Dict]) -> torch.Tensor:
         """Process event deliverables through NLP pipeline"""
-        deliverables = [event.get('deliverable', '') for event in events]
-        contexts = [event.get('context', {}) for event in events]
+        deliverables = [event.get("deliverable", "") for event in events]
+        contexts = [event.get("context", {}) for event in events]
 
-        nlp_results = await self.nlp_mapper.batch_map_deliverables(deliverables, contexts)
-        embeddings = torch.tensor([result['embedding'] for result in nlp_results])
+        nlp_results = await self.nlp_mapper.batch_map_deliverables(
+            deliverables, contexts
+        )
+        embeddings = torch.tensor([result["embedding"] for result in nlp_results])
 
         return embeddings
+
 
 # Training execution
 async def main():
     logging.basicConfig(level=logging.INFO)
     pipeline = TrainingPipeline()
     await pipeline.load_training_data("data/calendar_events.json")
-    results = await pipeline.run_meta_training(epochs=2) # Running for 2 epochs for demonstration
+    results = await pipeline.run_meta_training(
+        epochs=2
+    )  # Running for 2 epochs for demonstration
     print(f"Training completed: {results}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
