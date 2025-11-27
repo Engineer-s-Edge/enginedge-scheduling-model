@@ -55,7 +55,7 @@ jobs:
           echo "$KUBECONFIG_B64" | base64 -d > kubeconfig
           export KUBECONFIG=$PWD/kubeconfig
           IMAGE=ghcr.io/${{ github.repository_owner }}/enginedge-scheduling-model:${{ github.sha }}
-          helm upgrade --install scheduling-model ../enginedge-core/platform/k8s/charts/worker-generic \
+          helm upgrade --install scheduling-model ../enginedge-core/platform/k8s/dev/charts/worker-generic \
             --namespace default \
             --set image.repository=${IMAGE%:*} \
             --set image.tag=${IMAGE##*:} \
