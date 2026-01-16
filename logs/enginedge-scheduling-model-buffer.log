@@ -1,8 +1,0 @@
-{"timestamp": "2026-01-15T21:05:47.016656", "level": "info", "message": "\u2705 ML and NLP models initialized successfully.", "service": "enginedge-scheduling-model"}
-{"timestamp": "2026-01-15T21:05:47.068928", "level": "info", "message": "HTTP Request: GET http://testserver/health \"HTTP/1.1 200 OK\"", "service": "enginedge-scheduling-model"}
-{"timestamp": "2026-01-15T21:06:13.271563", "level": "info", "message": "\u2705 ML and NLP models initialized successfully.", "service": "enginedge-scheduling-model"}
-{"timestamp": "2026-01-15T21:06:13.357625", "level": "info", "message": "HTTP Request: GET http://testserver/health \"HTTP/1.1 200 OK\"", "service": "enginedge-scheduling-model"}
-{"timestamp": "2026-01-15T21:06:13.364072", "level": "info", "message": "HTTP Request: POST http://testserver/map-deliverable \"HTTP/1.1 200 OK\"", "service": "enginedge-scheduling-model"}
-{"timestamp": "2026-01-15T21:06:29.535058", "level": "info", "message": "\u2705 ML and NLP models initialized successfully.", "service": "enginedge-scheduling-model"}
-{"timestamp": "2026-01-15T21:06:29.623231", "level": "info", "message": "HTTP Request: GET http://testserver/health \"HTTP/1.1 200 OK\"", "service": "enginedge-scheduling-model"}
-{"timestamp": "2026-01-15T21:06:29.629892", "level": "info", "message": "HTTP Request: POST http://testserver/map-deliverable \"HTTP/1.1 200 OK\"", "service": "enginedge-scheduling-model"}
