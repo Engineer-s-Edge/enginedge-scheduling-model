@@ -1,21 +1,24 @@
 try:
     import torch  # type: ignore
+
     _HAS_TORCH = True
 except Exception:  # pragma: no cover - optional runtime dependency
     torch = None  # type: ignore
     _HAS_TORCH = False
-import numpy as np
-from typing import List, Dict, Tuple, Optional
 import asyncio
+import hashlib
 import logging
 import re
-import hashlib
+from typing import Dict, List, Optional
+
+import numpy as np
 
 try:
     # Import lazily to allow fallback when unavailable/offline
     from sentence_transformers import SentenceTransformer  # type: ignore
 except Exception:  # pragma: no cover - optional dependency at runtime
     SentenceTransformer = None  # type: ignore
+
 
 class DeliverableMapper:
     """
@@ -24,7 +27,8 @@ class DeliverableMapper:
 
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         if _HAS_TORCH:
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # type: ignore[attr-defined]
+            # type: ignore[attr-defined]
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
             self.device = "cpu"
         # Defer heavy model load; allow offline fallback
@@ -51,7 +55,7 @@ class DeliverableMapper:
             "learning": "learning training education skill development",
             "creative": "creative design brainstorming ideation",
             "administrative": "administrative tasks paperwork processing",
-            "client_work": "client work customer service support"
+            "client_work": "client work customer service support",
         }
 
         embeddings: Dict[str, np.ndarray] = {}
@@ -106,7 +110,9 @@ class DeliverableMapper:
         # Fallback
         return self._hashing_embed(text, dim=384)
 
-    async def map_deliverable(self, deliverable_text: str, context: Optional[Dict] = None) -> Dict:
+    async def map_deliverable(
+        self, deliverable_text: str, context: Optional[Dict] = None
+    ) -> Dict:
         """
         Map deliverable text to semantic embedding and category
         """
@@ -117,13 +123,17 @@ class DeliverableMapper:
             if deliverable_text.strip() == "":
                 zero_embedding = np.zeros(384, dtype=np.float32).tolist()
                 return {
-                    'embedding': zero_embedding,
-                    'category': 'unknown',
-                    'category_confidence': 0.0,
-                    'urgency': 'medium',
-                    'priority': 'medium',
-                    'estimated_duration_hours': 1.0,
-                    'semantic_features': {'word_count': 0, 'is_question': False, 'action_verb_present': False}
+                    "embedding": zero_embedding,
+                    "category": "unknown",
+                    "category_confidence": 0.0,
+                    "urgency": "medium",
+                    "priority": "medium",
+                    "estimated_duration_hours": 1.0,
+                    "semantic_features": {
+                        "word_count": 0,
+                        "is_question": False,
+                        "action_verb_present": False,
+                    },
                 }
             # Check cache first
             cache_key = f"{deliverable_text}_{hash(str(context))}"
@@ -145,16 +155,18 @@ class DeliverableMapper:
             priority = self._extract_priority(deliverable_text, context)
 
             # Estimate duration
-            estimated_duration = self._estimate_duration(deliverable_text, best_category)
+            estimated_duration = self._estimate_duration(
+                deliverable_text, best_category
+            )
 
             result = {
-                'embedding': embedding.tolist(),
-                'category': best_category['category'],
-                'category_confidence': best_category['confidence'],
-                'urgency': urgency,
-                'priority': priority,
-                'estimated_duration_hours': estimated_duration,
-                'semantic_features': self._extract_semantic_features(deliverable_text)
+                "embedding": embedding.tolist(),
+                "category": best_category["category"],
+                "category_confidence": best_category["confidence"],
+                "urgency": urgency,
+                "priority": priority,
+                "estimated_duration_hours": estimated_duration,
+                "semantic_features": self._extract_semantic_features(deliverable_text),
             }
 
             # Cache result
@@ -165,22 +177,22 @@ class DeliverableMapper:
         except Exception as e:
             logging.error(f"Deliverable mapping failed: {str(e)}")
             return {
-                'embedding': np.zeros(384).tolist(),
-                'category': 'unknown',
-                'category_confidence': 0.0,
-                'urgency': 'medium',
-                'priority': 'medium',
-                'estimated_duration_hours': 1.0,
-                'semantic_features': {}
+                "embedding": np.zeros(384).tolist(),
+                "category": "unknown",
+                "category_confidence": 0.0,
+                "urgency": "medium",
+                "priority": "medium",
+                "estimated_duration_hours": 1.0,
+                "semantic_features": {},
             }
 
     def _find_best_category(self, embedding: np.ndarray) -> Dict:
         """Find the most similar predefined category"""
         best_similarity = -1
-        best_category = 'unknown'
+        best_category = "unknown"
 
         for category, cat_embedding in self.category_embeddings.items():
-            denom = (np.linalg.norm(embedding) * np.linalg.norm(cat_embedding))
+            denom = np.linalg.norm(embedding) * np.linalg.norm(cat_embedding)
             if denom == 0:
                 similarity = 0.0
             else:
@@ -190,65 +202,68 @@ class DeliverableMapper:
                 best_similarity = similarity
                 best_category = category
 
-        return {
-            'category': best_category,
-            'confidence': float(best_similarity)
-        }
+        return {"category": best_category, "confidence": float(best_similarity)}
 
     def _extract_urgency(self, text: str, context: Optional[Dict] = None) -> str:
         """Extract urgency level from text and context"""
-        urgent_keywords = ['urgent', 'asap', 'immediately', 'deadline', 'critical']
-        low_urgency_keywords = ['eventually', 'when possible', 'low priority']
+        urgent_keywords = ["urgent", "asap", "immediately", "deadline", "critical"]
+        low_urgency_keywords = ["eventually", "when possible", "low priority"]
 
         text_lower = text.lower()
         # Text keyword precedence
         if any(keyword in text_lower for keyword in urgent_keywords):
-            return 'high'
+            return "high"
         if any(keyword in text_lower for keyword in low_urgency_keywords):
-            return 'low'
+            return "low"
 
         # Context explicit override 'urgency'
-        if context and 'urgency' in context and context['urgency'] in ['low','medium','high']:
-            return context['urgency']
+        if (
+            context
+            and "urgency" in context
+            and context["urgency"] in ["low", "medium", "high"]
+        ):
+            return context["urgency"]
 
         # Deadline-based heuristic only if no keywords and no explicit urgency
         if context:
-            days_until_deadline = context.get('days_until_deadline')
+            days_until_deadline = context.get("days_until_deadline")
             if days_until_deadline is not None:
                 if days_until_deadline <= 1:
-                    return 'high'
+                    return "high"
                 elif days_until_deadline <= 3:
-                    return 'medium'
+                    return "medium"
                 else:
-                    return 'low'
+                    return "low"
 
-        return 'medium'
+        return "medium"
 
     def _extract_priority(self, text: str, context: Optional[Dict] = None) -> str:
         """Extract priority level from text and context."""
         text_lower = text.lower()
-        if context and 'priority' in context:
-            return context['priority']
+        if context and "priority" in context:
+            return context["priority"]
 
-        if 'high priority' in text_lower or 'critical' in text_lower:
-            return 'high'
-        if 'low priority' in text_lower:
-            return 'low'
+        if "high priority" in text_lower or "critical" in text_lower:
+            return "high"
+        if "low priority" in text_lower:
+            return "low"
 
-        return 'medium'
+        return "medium"
 
     def _estimate_duration(self, text: str, category: dict) -> float:
         """Estimate task duration from text and category."""
         text_lower = text.lower()
 
         # Check for explicit duration mentions, e.g., "2-hour", "30 mins"
-        duration_match = re.search(r'(\d+(\.\d+)?)\s*[-]?\s*(hour|hr|h|minute|min|m)', text_lower)
+        duration_match = re.search(
+            r"(\d+(\.\d+)?)\s*[-]?\s*(hour|hr|h|minute|min|m)", text_lower
+        )
         if duration_match:
             value = float(duration_match.group(1))
             unit = duration_match.group(3)
-            if unit.startswith('h'):
+            if unit.startswith("h"):
                 return value
-            if unit.startswith('m'):
+            if unit.startswith("m"):
                 return value / 60.0
 
         # Default durations based on category
@@ -263,20 +278,25 @@ class DeliverableMapper:
             "creative": 2.0,
             "administrative": 0.5,
             "client_work": 1.5,
-            "unknown": 1.0
+            "unknown": 1.0,
         }
-        return category_durations.get(category.get('category', 'unknown'), 1.0)
+        return category_durations.get(category.get("category", "unknown"), 1.0)
 
     def _extract_semantic_features(self, text: str) -> dict:
         """Extract simple semantic features from the text."""
         words = text.split()
         return {
-            'word_count': len(words),
-            'is_question': text.strip().endswith('?'),
-            'action_verb_present': any(verb in text.lower() for verb in ['create', 'review', 'plan', 'implement', 'discuss'])
+            "word_count": len(words),
+            "is_question": text.strip().endswith("?"),
+            "action_verb_present": any(
+                verb in text.lower()
+                for verb in ["create", "review", "plan", "implement", "discuss"]
+            ),
         }
 
-    async def batch_map_deliverables(self, deliverables: List[str], contexts: Optional[List[Dict]] = None) -> List[Dict]:
+    async def batch_map_deliverables(
+        self, deliverables: List[str], contexts: Optional[List[Dict]] = None
+    ) -> List[Dict]:
         """Process multiple deliverables in batch for efficiency"""
         if contexts is None:
             contexts = [{}] * len(deliverables)

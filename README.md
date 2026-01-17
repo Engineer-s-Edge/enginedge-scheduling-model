@@ -1,15 +1,15 @@
 # EnginEdge - Calendar ML Model Service
 
-This service provides advanced, real-time personalized calendar scheduling recommendations. It is built as a Python microservice using PyTorch, Transformers, and FastAPI, and is designed to replace the existing in-process TensorFlow.js model in the `main-node` backend.
+This service provides advanced, real-time personalized calendar scheduling recommendations. It is built as a Python microservice using PyTorch, Transformers, and FastAPI, and replaces the legacy in-process TensorFlow.js model in the main application.
 
 The architecture is based on Model-Agnostic Meta-Learning (MAML) to handle cold-start problems and provide rapid personalization for each user.
 
 ## Core Components
 
-- **FastAPI Application (`src/main.py`):** Exposes the ML/NLP functionality via a REST API.
+- **FastAPI Application (`src/main.py`):** Exposes the ML/NLP functionality via a REST API. Port: **8000**
 - **MAML Scheduler (`src/ml/maml_scheduler.py`):** The core PyTorch model for learning user scheduling preferences and predicting optimal time slots.
 - **Deliverable Mapper (`src/nlp/deliverable_mapper.py`):** A Transformer-based NLP component to map natural language tasks into semantic vector embeddings.
-- **Training Pipeline (`src/ml/train_pipeline.py`):** A script to perform meta-training on the MAML model.
+- **Kafka Logging:** Integrated Kafka logging handler for centralized log aggregation.
 
 ---
 
@@ -26,11 +26,11 @@ This service is fully containerized with Docker and Docker Compose for easy setu
 
 1.  **Navigate to the directory:**
     ```bash
-    cd calendar-model
+    cd enginedge-scheduling-model
     ```
 
 2.  **Build and run the services:**
-    This command will build the Docker image for the API, pull the Redis image, and start both containers in the background.
+    This command will build the Docker image for the API and start the container.
     ```bash
     docker-compose up --build -d
     ```
@@ -40,12 +40,12 @@ This service is fully containerized with Docker and Docker Compose for easy setu
     ```bash
     docker-compose ps
     ```
-    You should see `calendar-model-api` and `calendar-model-redis` with a status of `Up`.
+    You should see `scheduling-model` with a status of `Up` (port 8000).
 
-4.  **Check the logs (optional):**
+4.  **Check the logs:**
     To see the logs from the API service:
     ```bash
-    docker-compose logs -f model-api
+    docker-compose logs -f scheduling-model
     ```
     You should see a message indicating that the Uvicorn server has started and the models have been initialized.
 
@@ -53,7 +53,7 @@ This service is fully containerized with Docker and Docker Compose for easy setu
 
 ## 2. API Endpoints
 
-The service exposes the following endpoints.
+The service exposes the following endpoints (Port 8000).
 
 ### Health Check
 

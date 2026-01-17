@@ -28,10 +28,11 @@ COPY --chown=appuser:appuser ./src /home/appuser/app/src
 USER appuser
 WORKDIR /home/appuser/app
 
-# Make port 8000 available to the world outside this container
-EXPOSE 8000
+# Make port 3009 available to the world outside this container (default, can be overridden via PORT env var)
+EXPOSE 3009
 
 # Define the command to run the application
 # We run uvicorn and point it to the app instance in our main.py file
 # --host 0.0.0.0 makes the server accessible from outside the container
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use PORT env var if set, otherwise default to 3009
+CMD ["sh", "-c", "uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-3009}"]
